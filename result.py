@@ -1,0 +1,150 @@
+# -*- coding:utf-8 -*-
+
+import time
+import json
+import argparse
+
+import numpy as np
+import mxnet as mx
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+from utils_4n0_3layer_12T_res import (construct_model, generate_data,
+                       masked_mae_np, masked_mape_np, masked_mse_np)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type=str, help='configuration file')
+parser.add_argument("--test", action="store_true", help="test program")
+args = parser.parse_args()
+
+config_filename = args.config
+
+
+# load config
+with open(config_filename, 'r') as f:
+    config = json.loads(f.read())
+
+# print(json.dumps(config, sort_keys=True, indent=4))
+
+net = construct_model(config)
+
+batch_size = config['batch_size']
+num_of_vertices = config['num_of_vertices']
+graph_signal_matrix_filename = config['graph_signal_matrix_filename']
+if isinstance(config['ctx'], list):
+    ctx = [mx.gpu(i) for i in config['ctx']]
+elif isinstance(config['ctx'], int):
+    ctx = mx.gpu(config['ctx'])
+
+#  load data
+loaders = []
+true_values = []
+for idx, (x, y) in enumerate(generate_data(graph_signal_matrix_filename)):
+    if args.test:
+        x = x[: 100]
+        y = y[: 100]
+    y = y.squeeze(axis=-1)
+    print(x.shape, y.shape)
+    loaders.append(
+        mx.io.NDArrayIter(
+            x, y if idx == 0 else None,
+            batch_size=batch_size,
+            shuffle=(idx == 0),
+            label_name='label'
+        )
+    )
+    if idx == 0:
+        training_samples = x.shape[0]
+    else:
+        true_values.append(y)
+
+train_loader, val_loader, test_loader = loaders
+val_y, test_y = true_values
+
+# load model
+epochs = 200
+if args.test:
+    epochs = 5
+sym, arg_params, aux_params = mx.model.load_checkpoint(f"result/{config_filename.split('/')[1]}/STFGNN", epochs)
+
+mod = mx.mod.Module(
+    sym,
+    data_names=['data'],
+    label_names=['label'],
+    context=ctx
+)
+
+mod.bind(
+    data_shapes=[(
+        'data',
+        (batch_size, config['points_per_hour'], num_of_vertices, 1)
+    ), ],
+    label_shapes=[(
+        'label',
+        (batch_size, config['points_per_hour'], num_of_vertices)
+    )]
+)
+
+mod.set_params(arg_params, aux_params)
+
+# prediction
+val_loader.reset()
+prediction = mod.predict(val_loader)[1].asnumpy()
+loss = masked_mae_np(val_y, prediction, 0)
+print('validation: loss: %.2f'%(loss), flush=True)
+
+# for nv in range(num_of_vertices):
+#     plt.figure(figsize=(12,4))
+#     y1 = np.squeeze(val_y[:,0:1,nv:nv+1])
+#     y2 = np.squeeze(prediction[:,0:1,nv:nv+1])
+#     x = [i for i in range(1,y1.shape[0] + 1)]
+    
+#     plt.subplot(2,1,1)
+#     plt.plot(x,y1,'r',label='True Value')
+#     plt.plot(x,y2,'b',label='Prediction')
+#     plt.legend(loc = 'upper center')
+
+#     plt.subplot(2,1,2)
+#     plt.plot(x,abs(y1-y2),'b',label='Diff')
+#     plt.legend(loc = 'upper center')
+    
+#     plt.xlabel("time interval")
+#     plt.savefig(f"result/val_{nv}_{epochs}")
+#     plt.close()
+
+# test
+test_loader.reset()
+prediction = mod.predict(test_loader)[1].asnumpy()
+tmp_info = []
+for idx in range(config['num_for_predict']):
+    y, x = test_y[:, : idx + 1, :], prediction[:, : idx + 1, :]
+    print(x.shape)
+    tmp_info.append((
+        masked_mae_np(y, x, 0),
+        masked_mape_np(y, x, 0),
+        masked_mse_np(y, x, 0) ** 0.5
+    ))
+print(tmp_info)
+mae, mape, rmse = tmp_info[-1]
+print('test:, MAE: {:.2f}, MAPE: {:.2f}, RMSE: {:.2f}'.format(mae, mape, rmse),flush=True)
+
+# for nv in range(num_of_vertices):
+#     plt.figure(figsize=(12,4))
+#     y1 = np.squeeze(test_y[:,0:1,nv:nv+1])
+#     y2 = np.squeeze(prediction[:,0:1,nv:nv+1])
+#     x = [i for i in range(1,y1.shape[0] + 1)]
+   
+#     plt.subplot(2,1,1)
+#     plt.plot(x,y1,'r',label='True Value')
+#     plt.plot(x,y2,'b',label='Prediction')
+#     plt.legend(loc = 'upper center')
+
+#     plt.subplot(2,1,2)
+#     plt.plot(x,abs(y1-y2),'b',label='Diff')
+#     plt.legend(loc = 'upper center')
+
+#     plt.xlabel("time interval")
+#     plt.savefig(f"result/test_{nv}_{epochs}")
+#     plt.close()
