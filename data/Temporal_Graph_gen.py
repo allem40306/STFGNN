@@ -58,6 +58,7 @@ parser.add_argument("--sparsity", type=float, default=0.01, help="sparsity of sp
 
 args = parser.parse_args()
 
+print(args.dataset+'/'+args.dataset+".npz")
 df = np.load(args.dataset+'/'+args.dataset+".npz")['data']
 num_samples,ndim,_ = df.shape
 num_train = int(num_samples * 0.6)
@@ -75,10 +76,10 @@ for i in range(ndim):
 
 dtw=d+d.T
 
-np.save("./newdataset/"+args.dataset+"-dtw-"+str(args.period)+'-'+str(args.order)+"-.npy",dtw)
+np.save("./MRT/"+args.dataset+"-dtw-"+str(args.period)+'-'+str(args.order)+"-.npy",dtw)
 print("The calculation of time series is done!")
 
-adj = np.load("./newdataset/"+args.dataset+"-dtw-"+str(args.period)+'-'+str(args.order)+"-.npy")
+adj = np.load("./MRT/"+args.dataset+"-dtw-"+str(args.period)+'-'+str(args.order)+"-.npy")
 adj = adj+ adj.T
 
 w_adj = np.zeros([ndim,ndim])
@@ -101,6 +102,6 @@ for i in range(ndim):
 print("Total route number: ", ndim)
 print("Sparsity of adj: ", len(w_adj.nonzero()[0])/(ndim*ndim))
 
-pd.DataFrame(w_adj).to_csv("./newdataset/adj_tg_"+args.dataset+".csv", index = False, header=None)
+pd.DataFrame(w_adj).to_csv("./adj_tg_"+args.dataset+".csv", index = False, header=None)
 
 print("The weighted matrix of temporal graph is generated!")
