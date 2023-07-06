@@ -22,6 +22,6 @@
     "num_of_vertices": 119,
     "points_per_hour": 12,
     "num_for_predict": 12,
-    "num_of_features": 6,
+    "num_of_features": 4,
     "adj_dtw_filename": "data/MRT/adj_tg_MRT.csv"
 }

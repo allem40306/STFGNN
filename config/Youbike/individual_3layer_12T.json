@@ -22,6 +22,6 @@
     "num_of_vertices": 1282,
     "points_per_hour": 12,
     "num_for_predict": 12,
-    "num_of_features": 1,
+    "num_of_features": 7,
     "adj_dtw_filename": "data/Youbike/adj_tg_Youbike.csv"
 }
