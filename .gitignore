@@ -1,3 +1,4 @@
-result/
+result*/
+data/
 __pycache__/
 STFGNN/
