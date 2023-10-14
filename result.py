@@ -29,6 +29,7 @@ net = construct_model(config)
 batch_size = config['batch_size']
 num_of_vertices = config['num_of_vertices']
 num_of_features = config['num_of_features']
+predict_features = config['predict_features']
 graph_signal_matrix_filename = config['graph_signal_matrix_filename']
 if isinstance(config['ctx'], list):
     ctx = [mx.gpu(i) for i in config['ctx']]
@@ -42,7 +43,8 @@ for idx, (x, y) in enumerate(generate_data(graph_signal_matrix_filename, num_of_
     if args.test:
         x = x[: 100]
         y = y[: 100]
-    y = y.squeeze(axis=-1)
+    y = y[:, :, :, 0:predict_features]
+    # y = y.squeeze(axis=-1)
     print(x.shape, y.shape)
     loaders.append(
         mx.io.NDArrayIter(
@@ -64,7 +66,9 @@ val_y, test_y = true_values
 epochs = 200
 if args.test:
     epochs = 5
-sym, arg_params, aux_params = mx.model.load_checkpoint(f"result/{config_filename.split('/')[1]}/STFGNN", epochs)
+
+print(f'STFGNN_{config_filename.replace("/","_")}')
+sym, arg_params, aux_params = mx.model.load_checkpoint(f'STFGNN_{config_filename.replace("/","_")}', epochs)
 
 mod = mx.mod.Module(
     sym,
@@ -80,68 +84,29 @@ mod.bind(
     ), ],
     label_shapes=[(
         'label',
-        (batch_size, config['points_per_hour'], num_of_vertices)
+        (batch_size, config['points_per_hour'], num_of_vertices, predict_features)
     )]
 )
 
 mod.set_params(arg_params, aux_params)
 
-# prediction
-val_loader.reset()
-prediction = mod.predict(val_loader)[1].asnumpy()
-loss = masked_mae_np(val_y, prediction, 0)
-print('validation: loss: %.2f'%(loss), flush=True)
-
-# for nv in range(num_of_vertices):
-#     plt.figure(figsize=(12,4))
-#     y1 = np.squeeze(val_y[:,0:1,nv:nv+1])
-#     y2 = np.squeeze(prediction[:,0:1,nv:nv+1])
-#     x = [i for i in range(1,y1.shape[0] + 1)]
-    
-#     plt.subplot(2,1,1)
-#     plt.plot(x,y1,'r',label='True Value')
-#     plt.plot(x,y2,'b',label='Prediction')
-#     plt.legend(loc = 'upper center')
-
-#     plt.subplot(2,1,2)
-#     plt.plot(x,abs(y1-y2),'b',label='Diff')
-#     plt.legend(loc = 'upper center')
-    
-#     plt.xlabel("time interval")
-#     plt.savefig(f"result/val_{nv}_{epochs}")
-#     plt.close()
-
 # test
 test_loader.reset()
 prediction = mod.predict(test_loader)[1].asnumpy()
-tmp_info = []
-for idx in range(config['num_for_predict']):
-    y, x = test_y[:, : idx + 1, :], prediction[:, : idx + 1, :]
-    print(x.shape)
-    tmp_info.append((
-        masked_mae_np(y, x, 0),
-        masked_mape_np(y, x, 0),
-        masked_mse_np(y, x, 0) ** 0.5
-    ))
-print(tmp_info)
-mae, mape, rmse = tmp_info[-1]
-print('test:, MAE: {:.2f}, MAPE: {:.2f}, RMSE: {:.2f}'.format(mae, mape, rmse),flush=True)
-
-# for nv in range(num_of_vertices):
-#     plt.figure(figsize=(12,4))
-#     y1 = np.squeeze(test_y[:,0:1,nv:nv+1])
-#     y2 = np.squeeze(prediction[:,0:1,nv:nv+1])
-#     x = [i for i in range(1,y1.shape[0] + 1)]
-   
-#     plt.subplot(2,1,1)
-#     plt.plot(x,y1,'r',label='True Value')
-#     plt.plot(x,y2,'b',label='Prediction')
-#     plt.legend(loc = 'upper center')
-
-#     plt.subplot(2,1,2)
-#     plt.plot(x,abs(y1-y2),'b',label='Diff')
-#     plt.legend(loc = 'upper center')
-
-#     plt.xlabel("time interval")
-#     plt.savefig(f"result/test_{nv}_{epochs}")
-#     plt.close()
+filename = f"{config_filename.split('/')[1]}.csv"
+outfile = open(filename, "w")
+outfile.write("MAE,MAPE,RMSE\n")
+for p in range(predict_features):
+    tmp_info = []
+    for idx in range(config['num_for_predict']):
+        y, x = test_y[:, : idx + 1, :, p: p + 1], prediction[:, : idx + 1, :, p: p + 1]
+        print(x.shape)
+        tmp_info.append((
+            masked_mae_np(y, x, 0),
+            masked_mape_np(y, x, 0),
+            masked_mse_np(y, x, 0) ** 0.5
+        ))
+        outfile.write(f"{masked_mae_np(y, x, 0)},{masked_mape_np(y, x, 0)},{masked_mse_np(y, x, 0) ** 0.5}\n")
+    print(tmp_info)
+    mae, mape, rmse = tmp_info[-1]
+    print('test:, MAE: {:.2f}, MAPE: {:.2f}, RMSE: {:.2f}'.format(mae, mape, rmse),flush=True)

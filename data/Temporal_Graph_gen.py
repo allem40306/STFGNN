@@ -74,13 +74,14 @@ for i in range(ndim):
     t2=time.time()
     print('Line',i,'finished in',t2-t1,'seconds.')
 
-dtw=d+d.T
+dtw = d + d.T
 
-np.save("./MRT/"+args.dataset+"-dtw-"+str(args.period)+'-'+str(args.order)+"-.npy",dtw)
+dtwFile = f"./{args.dataset}/{args.dataset}-dtw-{args.period}-{args.order}-.npy"
+np.save(dtwFile, dtw)
 print("The calculation of time series is done!")
 
-adj = np.load("./MRT/"+args.dataset+"-dtw-"+str(args.period)+'-'+str(args.order)+"-.npy")
-adj = adj+ adj.T
+adj = np.load(dtwFile)
+adj = adj + adj.T
 
 w_adj = np.zeros([ndim,ndim])
 

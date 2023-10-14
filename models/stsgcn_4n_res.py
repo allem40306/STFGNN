@@ -296,7 +296,7 @@ def sthgcn_layer_individual(data, adj,
     return layer_out
 
 
-def output_layer(data, num_of_vertices, input_length, num_of_features,
+def output_layer(data, num_of_vertices, input_length, num_of_features, predict_features,
                  num_of_filters=128, predict_length=12):
     '''
     Parameters
@@ -308,6 +308,8 @@ def output_layer(data, num_of_vertices, input_length, num_of_features,
     input_length: int, length of time series, T
 
     num_of_features: int, C
+
+    predict_features: int, Co
 
     num_of_filters: int, C'
 
@@ -335,13 +337,16 @@ def output_layer(data, num_of_vertices, input_length, num_of_features,
         ), 'relu'
     )
 
-    # (B, N, T')
+    # (B, N, T' * Co)
     data = mx.sym.FullyConnected(
         data,
         flatten=False,
-        num_hidden=predict_length
+        num_hidden=predict_length * predict_features
     )
 
+    # (B, N, T', Co)
+    data = mx.sym.reshape(data, (-1, num_of_vertices, predict_length, predict_features))
+   
     # (B, T', N)
     data = mx.sym.swapaxes(data, 1, 2)
 
@@ -404,7 +409,7 @@ def weighted_loss(data, label, input_length, rho=1):
 
 
 def stsgcn(data, adj, label,
-           input_length, num_of_vertices, num_of_features,
+           input_length, num_of_vertices, num_of_features, predict_features,
            filter_list, module_type, activation,
            use_mask=True, mask_init_value=None,
            temporal_emb=True, spatial_emb=True,
@@ -437,7 +442,7 @@ def stsgcn(data, adj, label,
     for i in range(predict_length):
         need_concat.append(
             output_layer(
-                data, num_of_vertices, input_length, num_of_features,
+                data, num_of_vertices, input_length, num_of_features, predict_features,
                 num_of_filters=128, predict_length=1
             )
         )
