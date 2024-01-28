@@ -18,11 +18,11 @@
     "ctx": 0,
     "adj_filename": "data/Youbike/Youbike.csv",
     "id_filename": null,
-    "graph_signal_matrix_filename": "data/Youbike/Youbike.npz",
-    "num_of_vertices": 332,
+    "graph_signal_matrix_filename": "data/Youbike/Youbike_split.npz",
+    "num_of_vertices": 341,
     "points_per_hour": 12,
     "num_for_predict": 12,
-    "num_of_features": 336,
-    "predict_features": 332,
+    "num_of_features": 345,
+    "predict_features": 341,
     "adj_dtw_filename": "data/Youbike/adj_tg_Youbike.csv"
 }

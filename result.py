@@ -93,10 +93,11 @@ mod.set_params(arg_params, aux_params)
 # test
 test_loader.reset()
 prediction = mod.predict(test_loader)[1].asnumpy()
+np.savez_compressed(f"{config_filename.split('/')[1]}_result.npz", test = test_y, prediction = prediction)
 filename = f"{config_filename.split('/')[1]}.csv"
 outfile = open(filename, "w")
 outfile.write("MAE,MAPE,RMSE\n")
-for p in range(predict_features):
+for p in range(3):
     tmp_info = []
     for idx in range(config['num_for_predict']):
         y, x = test_y[:, : idx + 1, :, p: p + 1], prediction[:, : idx + 1, :, p: p + 1]

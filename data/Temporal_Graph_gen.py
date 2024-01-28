@@ -21,7 +21,7 @@ def normalize(a):
     std=np.std(a,axis=1,keepdims=True)
     return (a-mu)/std
 
-def compute_dtw(a,b,order=1,Ts=12,normal=True):
+def compute_dtw(a,b,order=1,Ts=12,normal=False):
     if normal:
         a=normalize(a)
         b=normalize(b)

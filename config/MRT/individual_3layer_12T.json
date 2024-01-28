@@ -18,10 +18,11 @@
     "ctx": 0,
     "adj_filename": "data/MRT/MRT.csv",
     "id_filename": null,
-    "graph_signal_matrix_filename": "data/MRT/MRT.npz",
+    "graph_signal_matrix_filename": "data/MRT/MRT_split.npz",
     "num_of_vertices": 119,
     "points_per_hour": 12,
     "num_for_predict": 12,
-    "num_of_features": 6,
+    "num_of_features": 123,
+    "predict_features": 119,
     "adj_dtw_filename": "data/MRT/adj_tg_MRT.csv"
 }
