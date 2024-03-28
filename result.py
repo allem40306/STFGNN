@@ -97,17 +97,12 @@ np.savez_compressed(f"{config_filename.split('/')[1]}_result.npz", test = test_y
 filename = f"{config_filename.split('/')[1]}.csv"
 outfile = open(filename, "w")
 outfile.write("MAE,MAPE,RMSE\n")
-for p in range(3):
-    tmp_info = []
-    for idx in range(config['num_for_predict']):
-        y, x = test_y[:, : idx + 1, :, p: p + 1], prediction[:, : idx + 1, :, p: p + 1]
-        print(x.shape)
-        tmp_info.append((
-            masked_mae_np(y, x, 0),
-            masked_mape_np(y, x, 0),
-            masked_mse_np(y, x, 0) ** 0.5
-        ))
-        outfile.write(f"{masked_mae_np(y, x, 0)},{masked_mape_np(y, x, 0)},{masked_mse_np(y, x, 0) ** 0.5}\n")
-    print(tmp_info)
-    mae, mape, rmse = tmp_info[-1]
-    print('test:, MAE: {:.2f}, MAPE: {:.2f}, RMSE: {:.2f}'.format(mae, mape, rmse),flush=True)
+tmp_info = []
+for idx in range(config['num_for_predict']):
+    y, x = test_y[:, : idx + 1, :], prediction[:, : idx + 1, :]
+    tmp_info.append((
+        masked_mae_np(y, x, 0),
+        masked_mape_np(y, x, 0),
+        masked_mse_np(y, x, 0) ** 0.5
+    ))
+    outfile.write(f"{masked_mae_np(y, x, 0)},{masked_mape_np(y, x, 0)},{masked_mse_np(y, x, 0) ** 0.5}\n")

@@ -16,13 +16,13 @@
     "epochs": 200,
     "max_update_factor": 1,
     "ctx": 0,
-    "adj_filename": "data/Youbike/Youbike.csv",
+    "adj_filename": "data/Youbike_2/Youbike.csv",
     "id_filename": null,
-    "graph_signal_matrix_filename": "data/Youbike/Youbike_split.npz",
+    "graph_signal_matrix_filename": "data/Youbike_2/Youbike_split.npz",
     "num_of_vertices": 507,
     "points_per_hour": 12,
     "num_for_predict": 12,
-    "num_of_features": 6,
-    "predict_features": 2,
-    "adj_dtw_filename": "data/Youbike/adj_tg_Youbike.csv"
+    "num_of_features": 511,
+    "predict_features": 507,
+    "adj_dtw_filename": "data/Youbike_2/adj_tg_Youbike_2.csv"
 }
