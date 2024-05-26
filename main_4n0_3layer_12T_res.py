@@ -161,6 +161,9 @@ def training(epochs):
             lowest_val_loss = loss
 
         global_epoch += 1
+
+    test_loader.reset()
+    prediction = mod.predict(test_loader)[1].asnumpy()
     np.savez_compressed(f"{save_folder}/result.npz", prediction=prediction, target=test_y)
 
 if args.test:
