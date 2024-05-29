@@ -97,11 +97,15 @@ def gcn_operation(data, adj,
             num_hidden=2 * num_of_filter
         )
 
+        data = mx.sym.BatchNorm(data)
+
         # shape is (4N, B, C'), (4N, B, C')
         lhs, rhs = mx.sym.split(data, num_outputs=2, axis=2)
 
         # shape is (4N, B, C')
-        return lhs * mx.sym.sigmoid(rhs)
+        data = lhs * mx.sym.sigmoid(rhs)
+        data = mx.sym.Dropout(data, p=0.4)
+        return data
 
     elif activation == 'relu':
 
