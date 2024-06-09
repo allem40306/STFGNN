@@ -299,8 +299,7 @@ def sthgcn_layer_individual(data, adj,
     layer_out = need_concat_ + data_res
     return layer_out
 
-
-def output_layer(data, num_of_vertices, input_length, num_of_features, predict_features,
+def output_layer(data, smoothing_matrix, num_of_vertices, input_length, num_of_features, predict_features,
                  num_of_filters=128, predict_length=12):
     '''
     Parameters
@@ -321,7 +320,7 @@ def output_layer(data, num_of_vertices, input_length, num_of_features, predict_f
 
     Returns
     ----------
-    output shape is (B, T', N)
+    output shape is (B, T', N, Co)
     '''
 
     # data shape is (B, N, T, C)
@@ -351,8 +350,12 @@ def output_layer(data, num_of_vertices, input_length, num_of_features, predict_f
     # (B, N, T', Co)
     data = mx.sym.reshape(data, (-1, num_of_vertices, predict_length, predict_features))
    
-    # (B, T', N)
+    # (B, T', N, Co)
     data = mx.sym.swapaxes(data, 1, 2)
+
+    # smmothing
+    data = mx.sym.broadcast_mul(mx.sym.transpose(smoothing_matrix), data)
+    data = mx.sym.broadcast_mul(data, smoothing_matrix)
 
     return data
 
@@ -411,8 +414,7 @@ def weighted_loss(data, label, input_length, rho=1):
     )
     return agg_loss
 
-
-def stsgcn(data, adj, label,
+def stsgcn(data, smoothing_matrix, adj, label,
            input_length, num_of_vertices, num_of_features, predict_features,
            filter_list, module_type, activation,
            use_mask=True, mask_init_value=None,
@@ -446,7 +448,7 @@ def stsgcn(data, adj, label,
     for i in range(predict_length):
         need_concat.append(
             output_layer(
-                data, num_of_vertices, input_length, num_of_features, predict_features,
+                data, smoothing_matrix, num_of_vertices, input_length, num_of_features, predict_features,
                 num_of_filters=128, predict_length=1
             )
         )

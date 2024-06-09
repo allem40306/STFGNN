@@ -29,6 +29,7 @@ def construct_model(config):
 
     adj = get_adjacency_matrix(adj_filename, num_of_vertices, type_ = 'distance',
                                id_filename=id_filename)
+    smoothing_matrix = get_smoothing_matrix(adj_filename, num_of_vertices, config['remain_probability'], config['distance_threshold'])
     #adj_mx = construct_adj(adj, 3)
     adj_dtw = np.array(pd.read_csv(config['adj_dtw_filename'], header=None))
     #xxx
@@ -41,6 +42,9 @@ def construct_model(config):
     adj = mx.sym.Variable('adj', shape=adj_mx.shape,
                           init=mx.init.Constant(value=adj_mx))
     adj = mx.sym.BlockGrad(adj)
+    smoothing_matrix = mx.sym.Variable('smoothing_matrix', shape=smoothing_matrix.shape,
+                          init=mx.init.Constant(value=smoothing_matrix))
+    smoothing_matrix = mx.sym.BlockGrad(smoothing_matrix)
     mask_init_value = mx.init.Constant(value=(adj_mx != 0)
                                        .astype('float32'))
 
@@ -58,7 +62,7 @@ def construct_model(config):
     else:
         first_layer_embedding_size = num_of_features
     net = stsgcn(
-        data, adj, label,
+        data, smoothing_matrix, adj, label,
         points_per_hour, num_of_vertices, first_layer_embedding_size, predict_features,
         filters, module_type, act_type,
         use_mask, mask_init_value, temporal_emb, spatial_emb,
@@ -126,6 +130,35 @@ def get_adjacency_matrix(distance_df_filename, num_of_vertices,
                                  "connectivity or distance!")
     return A
 
+
+def get_smoothing_matrix(distance_df_filename, num_of_vertices, remain_probability=0.8, distance_threshold=0.1):
+    import csv
+    N = int(num_of_vertices)
+    S = np.zeros((N, N), dtype=np.float32)
+    inner_point = [[] for i in range(N)]
+
+    with open(distance_df_filename, 'r') as f:
+        f.readline()
+        reader = csv.reader(f)
+        for row in reader:
+            if len(row) != 3:
+                continue
+            i, j, distance = int(row[0]), int(row[1]), float(row[2])
+            if distance <= distance_threshold:
+                inner_point[i].append(j)
+                inner_point[j].append(i)
+    
+    for i in range(N):
+        M = len(inner_point[i])
+        if M == 0:
+            S[i][i] = 1
+            continue
+        S[i][i] = remain_probability
+        smooth_probability = (1 - remain_probability) / M
+        for j in inner_point[i]:
+            S[i][j] = smooth_probability
+
+    return S
 
 def construct_adj(A, steps):
     '''
