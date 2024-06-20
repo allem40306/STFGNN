@@ -104,7 +104,7 @@ def gcn_operation(data, adj,
 
         # shape is (4N, B, C')
         data = lhs * mx.sym.sigmoid(rhs)
-        data = mx.sym.Dropout(data, p=0.4)
+        # data = mx.sym.Dropout(data, p=0.4)
         return data
 
     elif activation == 'relu':
@@ -299,8 +299,8 @@ def sthgcn_layer_individual(data, adj,
     layer_out = need_concat_ + data_res
     return layer_out
 
-def output_layer(data, smoothing_matrix, num_of_vertices, input_length, num_of_features, predict_features,
-                 num_of_filters=128, predict_length=12):
+def output_layer(data, num_of_vertices, input_length, num_of_features, predict_features,
+                 num_of_filters=128, predict_length=12, prefix=""):
     '''
     Parameters
     ----------
@@ -353,11 +353,33 @@ def output_layer(data, smoothing_matrix, num_of_vertices, input_length, num_of_f
     # (B, T', N, Co)
     data = mx.sym.swapaxes(data, 1, 2)
 
-    # smmothing
-    data = mx.sym.broadcast_mul(mx.sym.transpose(smoothing_matrix), data)
-    data = mx.sym.broadcast_mul(data, smoothing_matrix)
+    # smoothing
+    # data = mx.sym.dot(data, mx.sym.transpose(sw))
 
     return data
+
+
+def quantile_loss(data, label, alpha):
+    '''
+    Parameters
+    ----------
+    data: mx.sym.var, shape is (B, T', N)
+
+    label: mx.sym.var, shape is (B, T', N)
+
+    rho: float
+
+    Returns
+    ----------
+    loss: mx.sym
+    '''
+
+    # loss = mx.sym.abs(data - label)
+    loss = mx.sym.where(label > data, alpha * (label - data),
+                        (1 - alpha) * (data - label))
+    loss = mx.sym.MakeLoss(loss)
+    return loss
+
 
 
 def huber_loss(data, label, rho=1):
@@ -443,16 +465,23 @@ def stsgcn(data, smoothing_matrix, adj, label,
         input_length -= 3
         num_of_features = filters[-1]
 
+    # sw = mx.sym.var(
+    #     "{}_smoothing".format(prefix),
+    #     shape=(num_of_vertices, num_of_vertices),
+    #     init=mx.init.Xavier(magnitude=0.0003)
+    # )
+
     # (B, 1, N)
     need_concat = []
     for i in range(predict_length):
         need_concat.append(
             output_layer(
-                data, smoothing_matrix, num_of_vertices, input_length, num_of_features, predict_features,
-                num_of_filters=128, predict_length=1
+                data, num_of_vertices, input_length, num_of_features, predict_features,
+                num_of_filters=128, predict_length=1,
+                prefix="{}_stsgcl_{}".format(prefix, i)
             )
         )
     data = mx.sym.concat(*need_concat, dim=1)
 
-    loss = huber_loss(data, label, rho=rho)
+    loss = quantile_loss(data, label, alpha=0.99)
     return mx.sym.Group([loss, mx.sym.BlockGrad(data, name='pred')])
