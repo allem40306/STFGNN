@@ -138,27 +138,27 @@ def training(epochs):
             global_epoch, loss, time.time() - t), flush=True)
         info.append(loss)
 
-        if loss < lowest_val_loss:
+        # if loss < lowest_val_loss:
 
-            test_loader.reset()
-            prediction = mod.predict(test_loader)[1].asnumpy()
-            tmp_info = []
-            for idx in range(config['num_for_predict']):
-                y, x = test_y[:, : idx + 1, :], prediction[:, : idx + 1, :]
-                tmp_info.append((
-                    masked_mae_np(y, x, 0),
-                    masked_mape_np(y, x, 0),
-                    masked_mse_np(y, x, 0) ** 0.5
-                ))
-            mae, mape, rmse = tmp_info[-1]
-            print('test: Epoch: {}, MAE: {:.2f}, MAPE: {:.2f}, RMSE: {:.2f}, '
-                  'time: {:.2f}s'.format(
-                    global_epoch, mae, mape, rmse, time.time() - t))
-            print(flush=True)
-            info.extend((mae, mape, rmse))
-            info.append(tmp_info)
-            all_info.append(info)
-            lowest_val_loss = loss
+        #     test_loader.reset()
+        #     prediction = mod.predict(test_loader)[1].asnumpy()
+        #     tmp_info = []
+        #     for idx in range(config['num_for_predict']):
+        #         y, x = test_y[:, : idx + 1, :], prediction[:, : idx + 1, :]
+        #         tmp_info.append((
+        #             masked_mae_np(y, x, 0),
+        #             masked_mape_np(y, x, 0),
+        #             masked_mse_np(y, x, 0) ** 0.5
+        #         ))
+        #     mae, mape, rmse = tmp_info[-1]
+        #     print('test: Epoch: {}, MAE: {:.2f}, MAPE: {:.2f}, RMSE: {:.2f}, '
+        #           'time: {:.2f}s'.format(
+        #             global_epoch, mae, mape, rmse, time.time() - t))
+        #     print(flush=True)
+        #     info.extend((mae, mape, rmse))
+        #     info.append(tmp_info)
+        #     all_info.append(info)
+        #     lowest_val_loss = loss
 
         global_epoch += 1
 
@@ -170,11 +170,11 @@ if args.test:
     epochs = 5
 training(epochs)
 
-the_best = min(all_info, key=lambda x: x[2])
-print('step: {}\ntraining loss: {:.2f}\nvalidation loss: {:.2f}\n'
-      'tesing: MAE: {:.2f}\ntesting: MAPE: {:.2f}\n'
-      'testing: RMSE: {:.2f}\n'.format(*the_best))
-print(the_best)
+# the_best = min(all_info, key=lambda x: x[2])
+# print('step: {}\ntraining loss: {:.2f}\nvalidation loss: {:.2f}\n'
+#       'tesing: MAE: {:.2f}\ntesting: MAPE: {:.2f}\n'
+#       'testing: RMSE: {:.2f}\n'.format(*the_best))
+# print(the_best)
 
 if args.save:
     mod.save_checkpoint(f"{save_folder}/STFGNN_{config_filename.replace('/','_')}", epochs)
