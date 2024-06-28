@@ -25,6 +25,7 @@
     "num_of_features": 345,
     "predict_features": 341,
     "adj_dtw_filename": "data/Youbike/adj_tg_Youbike.csv",
+    "adj_tc_filename": "data/Youbike/adj_tc_Youbike.csv",
     "remain_probability": 0.8,
     "distance_threshold": 0.1
 }
