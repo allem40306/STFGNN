@@ -32,8 +32,13 @@ def construct_model(config):
     smoothing_matrix = get_smoothing_matrix(adj_filename, num_of_vertices, config['remain_probability'], config['distance_threshold'])
     #adj_mx = construct_adj(adj, 3)
     adj_dtw = np.array(pd.read_csv(config['adj_dtw_filename'], header=None))
+    if config['adj_tc_filename'] is not None:
+        print(config['adj_tc_filename'])
+        adj_tc = np.array(pd.read_csv(config['adj_tc_filename'], header=None))
+    else:
+        adj_tc = None
     #xxx
-    adj_mx = construct_adj_fusion(adj, adj_dtw, 4)
+    adj_mx = construct_adj_fusion(adj, adj_dtw, 4, adj_tc)
     print("The shape of localized adjacency matrix: {}".format(
         adj_mx.shape), flush=True)
 
@@ -190,7 +195,7 @@ def construct_adj(A, steps):
 
     return adj
 
-def construct_adj_fusion(A, A_dtw, steps):
+def construct_adj_fusion(A, A_dtw, steps, adj_tc = None):
     '''
     construct a bigger adjacency matrix using the given matrix
 
@@ -227,6 +232,12 @@ def construct_adj_fusion(A, A_dtw, steps):
         for k in range(steps - 1):
             adj[k * N + i, (k + 1) * N + i] = 1
             adj[(k + 1) * N + i, k * N + i] = 1
+    if adj_tc is not None:
+        for k in range(steps - 1):
+            adj[k * N: (k + 1) * N, (k + 1) * N: (k + 2) * N] = adj_tc
+            adj[(k + 1) * N: (k + 2) * N, k * N: (k + 1) * N] = adj_tc
+
+    
     #'''
     adj[3 * N: 4 * N, 0:  N] = A_dtw #adj[0 * N : 1 * N, 1 * N : 2 * N]
     adj[0 : N, 3 * N: 4 * N] = A_dtw #adj[0 * N : 1 * N, 1 * N : 2 * N]
