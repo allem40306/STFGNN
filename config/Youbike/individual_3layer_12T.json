@@ -16,7 +16,7 @@
     "epochs": 200,
     "max_update_factor": 1,
     "ctx": 0,
-    "adj_filename": "data/Youbike/Youbike.csv",
+    "adj_filename": "data/Youbike/adj_flow_100_Youbike.csv",
     "id_filename": null,
     "graph_signal_matrix_filename": "data/Youbike/Youbike_split.npz",
     "num_of_vertices": 341,
@@ -24,8 +24,8 @@
     "num_for_predict": 12,
     "num_of_features": 345,
     "predict_features": 341,
+    "adj_tc_filename": null,
     "adj_dtw_filename": "data/Youbike/adj_tg_Youbike.csv",
-    "adj_tc_filename": "data/Youbike/adj_tc_Youbike.csv",
     "remain_probability": 0.8,
     "distance_threshold": 0.1
 }

@@ -483,5 +483,6 @@ def stsgcn(data, smoothing_matrix, adj, label,
         )
     data = mx.sym.concat(*need_concat, dim=1)
 
-    loss = quantile_loss(data, label, alpha=0.99)
+    loss = huber_loss(data, label)
+    # loss = quantile_loss(data, label, alpha=0.95)
     return mx.sym.Group([loss, mx.sym.BlockGrad(data, name='pred')])

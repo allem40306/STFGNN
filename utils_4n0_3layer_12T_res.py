@@ -29,10 +29,10 @@ def construct_model(config):
 
     adj = get_adjacency_matrix(adj_filename, num_of_vertices, type_ = 'distance',
                                id_filename=id_filename)
-    smoothing_matrix = get_smoothing_matrix(adj_filename, num_of_vertices, config['remain_probability'], config['distance_threshold'])
+    smoothing_matrix = get_smoothing_matrix(adj_filename, num_of_vertices, 0, 0)
     #adj_mx = construct_adj(adj, 3)
     adj_dtw = np.array(pd.read_csv(config['adj_dtw_filename'], header=None))
-    if config['adj_tc_filename'] is not None:
+    if 'adj_tc_filename' in config and config['adj_tc_filename'] is not None:
         print(config['adj_tc_filename'])
         adj_tc = np.array(pd.read_csv(config['adj_tc_filename'], header=None))
     else:
