@@ -136,6 +136,7 @@ def get_adjacency_matrix(distance_df_filename, num_of_vertices,
                 A[j, i] = 1 / distance
             elif type_ == 'weight':
                 A[i, j] = distance
+                A[j, i] = distance
             else:
                 raise ValueError("type_ error, must be "
                                  "connectivity or distance!")
